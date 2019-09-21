@@ -5,6 +5,14 @@ using Microsoft.Xna.Framework.Input;
 
 namespace PongGame
 {
+    public enum GameState
+    {
+        Playing,
+        Paused,
+        LeftWins,
+        RightWins
+    }
+
     public class Game1 : Game
     {
         GraphicsDeviceManager graphics;
@@ -31,6 +39,8 @@ namespace PongGame
         int leftScore = 0;
         int rightScore = 0;
         const int scoreToReach = 5;
+
+        GameState currentState = GameState.Playing;
 
         public Game1()
         {
@@ -69,48 +79,70 @@ namespace PongGame
 
             keyboardState = Keyboard.GetState();
 
-            if (keyboardState.IsKeyDown(Keys.W))
+            if (currentState == GameState.Playing)
             {
-                leftPaddle.MoveUp();
-            }
-            if (keyboardState.IsKeyDown(Keys.S))
-            {
-                leftPaddle.MoveDown();
-            }
-            if (keyboardState.IsKeyDown(Keys.Up))
-            {
-                rightPaddle.MoveUp();
-            }
-            if (keyboardState.IsKeyDown(Keys.Down))
-            {
-                rightPaddle.MoveDown();
-            }
-
-            int ballUpdateValue = ball.Update(leftPaddle, rightPaddle);
-            if (ballUpdateValue > 0)
-            {
-                leftScore++;
-
-                if (leftScore == scoreToReach)
+                if (keyboardState.IsKeyDown(Keys.W))
                 {
-                    LeftWins();
+                    leftPaddle.MoveUp();
                 }
-                else
+                if (keyboardState.IsKeyDown(Keys.S))
                 {
-                    ResetGame();
+                    leftPaddle.MoveDown();
+                }
+                if (keyboardState.IsKeyDown(Keys.Up))
+                {
+                    rightPaddle.MoveUp();
+                }
+                if (keyboardState.IsKeyDown(Keys.Down))
+                {
+                    rightPaddle.MoveDown();
+                }
+                if (IsKeyPressed(Keys.Space))
+                {
+                    currentState = GameState.Paused;
+                }
+
+                int ballUpdateValue = ball.Update(leftPaddle, rightPaddle);
+                if (ballUpdateValue > 0)
+                {
+                    leftScore++;
+
+                    if (leftScore == scoreToReach)
+                    {
+                        currentState = GameState.LeftWins;
+                    }
+                    else
+                    {
+                        ResetGame();
+                    }
+                }
+                else if (ballUpdateValue < 0)
+                {
+                    rightScore++;
+
+                    if (rightScore == scoreToReach)
+                    {
+                        currentState = GameState.RightWins;
+                    }
+                    else
+                    {
+                        ResetGame();
+                    }
                 }
             }
-            else if (ballUpdateValue < 0)
+            else if (currentState == GameState.Paused)
             {
-                rightScore++;
-
-                if (rightScore == scoreToReach)
+                if (IsKeyPressed(Keys.Space))
                 {
-                    RightWins();
+                    currentState = GameState.Playing;
                 }
-                else
+            }
+            else
+            {
+                if (IsKeyPressed(Keys.Space))
                 {
-                    ResetGame();
+                    currentState = GameState.Playing;
+                    ResetEverything();
                 }
             }
 
@@ -119,14 +151,11 @@ namespace PongGame
             base.Update(gameTime);
         }
 
-        private void LeftWins()
+        private void ResetEverything()
         {
-            
-        }
-
-        private void RightWins()
-        {
-            
+            ResetGame();
+            leftScore = 0;
+            rightScore = 0;
         }
 
         private void ResetGame()
@@ -157,7 +186,24 @@ namespace PongGame
             tempString = $"Right Score: {rightScore}";
             spriteBatch.DrawString(mainFont, tempString, new Vector2(screenWidth - mainFont.MeasureString(tempString).X - 50, 50), Color.Black);
             tempString = $"First to {scoreToReach} wins";
-            spriteBatch.DrawString(mainFont, tempString, new Vector2(screenWidth/2 - mainFont.MeasureString(tempString).X/2, 50), Color.Black);
+            spriteBatch.DrawString(mainFont, tempString, new Vector2(screenWidth / 2 - mainFont.MeasureString(tempString).X / 2, 50), Color.Black);
+
+            if (currentState == GameState.Paused)
+            {
+                tempString = "Press space to continue";
+                spriteBatch.DrawString(mainFont, tempString, new Vector2(screenWidth / 2 - mainFont.MeasureString(tempString).X / 2, screenHeight / 2 - mainFont.MeasureString(tempString).Y / 2), Color.Red);
+            }
+            else if (currentState == GameState.LeftWins)
+            {
+                tempString = "Left Won! Press space to restart";
+                spriteBatch.DrawString(mainFont, tempString, new Vector2(screenWidth / 2 - mainFont.MeasureString(tempString).X / 2, screenHeight / 2 - mainFont.MeasureString(tempString).Y / 2), Color.Red);
+            }
+            else if (currentState == GameState.RightWins)
+            {
+                tempString = "Right Won! Press space to restart";
+                spriteBatch.DrawString(mainFont, tempString, new Vector2(screenWidth / 2 - mainFont.MeasureString(tempString).X / 2, screenHeight / 2 - mainFont.MeasureString(tempString).Y / 2), Color.Red);
+
+            }
 
             spriteBatch.End();
 
